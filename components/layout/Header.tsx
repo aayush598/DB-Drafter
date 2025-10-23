@@ -27,7 +27,7 @@ export function Header({ isDark, onToggleTheme, onReset }: HeaderProps) {
                   isDark ? "text-white" : "text-slate-900"
                 }`}
               >
-                Database Schema Generator
+                DB Drafter
               </h1>
               <p
                 className={`text-sm ${

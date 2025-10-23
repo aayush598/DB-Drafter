@@ -621,7 +621,7 @@ export default function HomePage() {
               </div>
               <div>
                 <div className={`font-black text-xl ${isDark ? "text-white" : "text-gray-900"}`}>
-                  Database Schema Generator
+                  DB Drafter
                 </div>
                 <div className={`text-sm ${isDark ? "text-gray-500" : "text-gray-600"}`}>
                   Powered by Google Gemini 2.0 Flash
