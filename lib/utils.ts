@@ -27,7 +27,6 @@ export function extractJsonFromResponse(text: string): any {
   try {
     return JSON.parse(match[0]);
   } catch (err) {
-    console.error("Failed to parse Gemini JSON:", err);
     throw new Error("Invalid JSON format from Gemini response");
   }
 }
@@ -37,7 +36,7 @@ export const sessions: Record<string, any> = {};
 
 // ✅ Helper to call Gemini model and return text
 export async function generateGeminiContent({
-  model = "gemini-2.5-flash",
+  model = "gemini-2.0-flash-lite",
   apiKey,
   contents,
 }: {
@@ -47,23 +46,42 @@ export async function generateGeminiContent({
 }): Promise<string> {
   const client = getGeminiClient(apiKey);
 
-  const response = await client.models.generateContent({
-    model,
-    contents,
-  });
+  try {
+    const response = await client.models.generateContent({
+      model,
+      contents,
+    });
 
-  const candidates = response.candidates ?? [];
-  if (!candidates.length) {
-    throw new Error("No candidates returned from Gemini model");
+    const candidates = response.candidates ?? [];
+    if (!candidates.length) {
+      throw new Error("No candidates returned from Gemini model");
+    }
+
+    const candidate = candidates[0];
+    const content = candidate.content;
+
+    // Try multiple ways to extract text
+    let text: string | undefined;
+
+    // Method 1: content.parts[0].text (most common)
+    if (content?.parts && Array.isArray(content.parts) && content.parts[0]?.text) {
+      text = content.parts[0].text;
+    }
+    // Method 2: Direct array access (your original code)
+    else if (Array.isArray(content) && content[0]?.text) {
+      text = content[0].text;
+    }
+    // Method 3: Direct text property
+    else if (typeof content === 'object' && 'text' in content) {
+      text = (content as any).text;
+    }
+
+    if (!text) {
+      throw new Error("No text found in Gemini response content");
+    }
+
+    return text.trim();
+  } catch (error) {
+    throw error;
   }
-
-  const contentParts = Array.isArray(candidates[0].content)
-    ? candidates[0].content
-    : [];
-
-  if (!contentParts.length || !contentParts[0]?.text) {
-    throw new Error("No text found in Gemini response content");
-  }
-
-  return contentParts[0].text.trim();
 }
