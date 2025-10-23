@@ -2,25 +2,47 @@ import { NextResponse } from "next/server";
 import { sessions, generateGeminiContent, extractJsonFromResponse } from "@/lib/utils";
 import { CodeGenerationRequest, CodeGenerationResponse, CodeFile } from "@/lib/types";
 
+// Define a type for table info used in mapping
+interface TableInfo {
+  name: string;
+  sql: string;
+  relationships: any[];
+}
+
 export async function POST(req: Request) {
   try {
     const requestData: CodeGenerationRequest = await req.json();
-    const { session_id, language, framework, include_migrations = true, include_models = true, include_repositories = false } = requestData;
+    const {
+      session_id,
+      language,
+      framework,
+      include_migrations = true,
+      include_models = true,
+      include_repositories = false,
+    } = requestData;
 
     // 1️⃣ Validate session
     const session = sessions[session_id];
-    if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
 
     if (!session.detailed_design) {
-      return NextResponse.json({ error: "Detailed design not generated yet" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Detailed design not generated yet" },
+        { status: 400 }
+      );
     }
 
     if (!session.table_schemas || Object.keys(session.table_schemas).length === 0) {
-      return NextResponse.json({ error: "No table schemas generated yet. Generate table schemas first." }, { status: 400 });
+      return NextResponse.json(
+        { error: "No table schemas generated yet. Generate table schemas first." },
+        { status: 400 }
+      );
     }
 
     // 2️⃣ Gather table info for prompt
-    const tablesInfo = session.detailed_design.tables
+    const tablesInfo: TableInfo[] = session.detailed_design.tables
       .sort((a: any, b: any) => a.sequence_order - b.sequence_order)
       .map((table: any) => {
         const schema = session.table_schemas[table.table_name];
@@ -31,7 +53,7 @@ export async function POST(req: Request) {
         };
       });
 
-    const tablesSql = tablesInfo.map(t => `-- ${t.name}\n${t.sql}`).join("\n\n");
+    const tablesSql = tablesInfo.map((t: TableInfo) => `-- ${t.name}\n${t.sql}`).join("\n\n");
 
     // 3️⃣ Build Gemini prompt
     let prompt = `
@@ -51,9 +73,15 @@ REQUIREMENTS:
 4. Include all necessary imports and dependencies
 `;
 
-    if (include_models) prompt += "\n5. Generate model/entity definitions for all tables with proper relationships";
-    if (include_migrations) prompt += "\n6. Generate migration files for database schema creation";
-    if (include_repositories) prompt += "\n7. Generate repository pattern implementation with CRUD operations";
+    if (include_models) {
+      prompt += "\n5. Generate model/entity definitions for all tables with proper relationships";
+    }
+    if (include_migrations) {
+      prompt += "\n6. Generate migration files for database schema creation";
+    }
+    if (include_repositories) {
+      prompt += "\n7. Generate repository pattern implementation with CRUD operations";
+    }
 
     prompt += `
 Return response in JSON format:
@@ -73,7 +101,7 @@ Return response in JSON format:
     const responseText = await generateGeminiContent({
       contents: prompt,
       apiKey: session.api_key,
-      model: session.model_name
+      model: session.model_name,
     });
 
     const codeData = extractJsonFromResponse(responseText);
@@ -82,7 +110,7 @@ Return response in JSON format:
     if (!session.generated_code) session.generated_code = {};
     session.generated_code[`${language}_${framework}`] = {
       files: codeData.files,
-      setup_instructions: codeData.setup_instructions
+      setup_instructions: codeData.setup_instructions,
     };
 
     // 6️⃣ Return typed response
@@ -97,7 +125,7 @@ Return response in JSON format:
       language,
       framework,
       files,
-      setup_instructions: codeData.setup_instructions
+      setup_instructions: codeData.setup_instructions,
     };
 
     return NextResponse.json(result);

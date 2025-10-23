@@ -1,14 +1,12 @@
 // lib/utils.ts
 import { GoogleGenAI } from "@google/genai";
 
-// ✅ Initialize Gemini client
-// If you want to use dynamic API keys (like your FastAPI version),
-// you can call `getGeminiClient(apiKey)` instead of the default `ai` instance below.
+// ✅ Initialize default Gemini client (uses env API key)
 export const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "", // fallback for env-based auth
+  apiKey: process.env.GEMINI_API_KEY || "",
 });
 
-// ✅ Optional per-request client (for user-supplied API keys)
+// ✅ Optional per-request client (for dynamic API keys)
 export function getGeminiClient(apiKey?: string) {
   return new GoogleGenAI({
     apiKey: apiKey || process.env.GEMINI_API_KEY || "",
@@ -17,7 +15,7 @@ export function getGeminiClient(apiKey?: string) {
 
 // ✅ Extract JSON safely from model responses
 export function extractJsonFromResponse(text: string): any {
-  // Clean up Markdown code blocks (Gemini often wraps responses in ```json)
+  // Remove Markdown code blocks (Gemini often wraps responses in ```json)
   const clean = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
 
   // Try to extract JSON
@@ -37,7 +35,7 @@ export function extractJsonFromResponse(text: string): any {
 // ✅ Simple in-memory session store (replace with Redis/DB in production)
 export const sessions: Record<string, any> = {};
 
-// ✅ Helper to call Gemini model with consistent structure
+// ✅ Helper to call Gemini model and return text
 export async function generateGeminiContent({
   model = "gemini-2.5-flash",
   apiKey,
@@ -48,13 +46,24 @@ export async function generateGeminiContent({
   contents: string;
 }): Promise<string> {
   const client = getGeminiClient(apiKey);
+
   const response = await client.models.generateContent({
     model,
     contents,
   });
 
-  // Depending on the SDK version, the text field may differ
-  const text = (response?.response?.text ?? response?.text ?? "").trim();
-  if (!text) throw new Error("Empty response from Gemini model");
-  return text;
+  const candidates = response.candidates ?? [];
+  if (!candidates.length) {
+    throw new Error("No candidates returned from Gemini model");
+  }
+
+  const contentParts = Array.isArray(candidates[0].content)
+    ? candidates[0].content
+    : [];
+
+  if (!contentParts.length || !contentParts[0]?.text) {
+    throw new Error("No text found in Gemini response content");
+  }
+
+  return contentParts[0].text.trim();
 }

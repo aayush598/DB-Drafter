@@ -1,17 +1,13 @@
+// app/api/v1/generate-questions/route.ts
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import {
-  getGeminiClient,
-  extractJsonFromResponse,
-  sessions,
-} from "@/lib/utils";
+import { getGeminiClient, extractJsonFromResponse, sessions } from "@/lib/utils";
 import type { ProjectDescriptionInput, Question } from "@/lib/types";
 
 // ✅ POST /api/v1/generate-questions
 export async function POST(req: Request) {
   try {
     const body: ProjectDescriptionInput = await req.json();
-
     const { description, api_key, model_name = "gemini-2.5-flash" } = body;
 
     if (!description || !api_key) {
@@ -21,10 +17,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Initialize Gemini client with provided API key
+    // ✅ Initialize Gemini client
     const client = getGeminiClient(api_key);
 
-    // ✅ Build prompt (mirrors your FastAPI version)
+    // ✅ Build prompt
     const prompt = `
 Based on the following project description, generate 5–7 relevant questions to understand the database requirements better.
 
@@ -62,8 +58,8 @@ Return JSON in this format:
       contents: prompt,
     });
 
-    const responseText =
-      result?.response?.text ?? (result as any)?.text ?? "";
+    // ✅ Access text directly from result
+    const responseText = result.text?.trim() ?? "";
 
     if (!responseText) {
       throw new Error("Empty response from Gemini model");
