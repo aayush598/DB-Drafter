@@ -1,3 +1,5 @@
+// components/layout/Sidebar.tsx
+
 "use client";
 
 import { Settings } from "lucide-react";
@@ -53,6 +55,7 @@ export function Sidebar({
             onChange={onApiKeyChange}
             onToggle={onToggleApiKey}
           />
+
           <ModelSelector
             isDark={isDark}
             value={modelName}
@@ -72,6 +75,33 @@ export function Sidebar({
         </h3>
         <ProgressIndicator isDark={isDark} currentStep={step} steps={STEPS} />
       </div>
+
+      {/* NEW: API Key warning moved to sidebar */}
+          {!apiKey && (
+            <div
+              className={`border rounded-lg p-3 mt-3 transition-colors ${
+                isDark
+                  ? "bg-amber-900/20 border-amber-800"
+                  : "bg-amber-50 border-amber-200"
+              }`}
+            >
+              <p
+                className={`text-xs font-medium mb-1 ${
+                  isDark ? "text-amber-400" : "text-amber-900"
+                }`}
+              >
+                🔑 API Key Required
+              </p>
+              <a
+                href="https://aistudio.google.com/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:text-blue-700 underline"
+              >
+                Get API Key →
+              </a>
+            </div>
+          )}
 
       {sessionId && (
         <div
