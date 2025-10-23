@@ -546,7 +546,7 @@ export default function DatabaseSchemaGenerator() {
                         Enter your Gemini API key in the sidebar to continue.
                       </p>
                       <a
-                        href="https://makersuite.google.com/app/apikey"
+                        href="https://aistudio.google.com/api-keys"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:text-blue-700 underline"
