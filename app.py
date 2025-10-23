@@ -61,7 +61,7 @@ with st.sidebar:
     
     # Progress indicator
     st.subheader("Progress")
-    progress_steps = ["Project Description", "Questions", "Table Design", "Schema Generation"]
+    progress_steps = ["Project Description", "Questions", "Table Design", "Schema Generation", "Code Generation"]
     for i, step_name in enumerate(progress_steps, 1):
         if i < st.session_state.step:
             st.success(f"✅ {step_name}")
@@ -337,11 +337,85 @@ elif st.session_state.step == 4:
             )
     
     # Back button
-    col1, col2 = st.columns([1, 4])
+    col1, col2, col3 = st.columns([1, 1, 3])
     with col1:
-        if st.button("⬅️ Back to Design", use_container_width=True):
+        if st.button("⬅️ Back", use_container_width=True):
             st.session_state.step = 3
             st.rerun()
+    
+    with col2:
+        if st.button("Generate Schemas ➡️", type="primary", use_container_width=True):
+            st.session_state.step = 5
+            st.rerun()
+
+# Step 5: Generate Database Code
+elif st.session_state.step == 5:
+    st.header("Step 5: Generate Database Code")
+
+    st.info("Generate complete database setup code in your preferred language and framework.")
+
+    # Select language and framework
+    response = requests.get(f"{API_BASE_URL}/api/v1/supported-languages")
+    if response.status_code == 200:
+        supported = response.json()
+    else:
+        st.error("Error fetching supported languages")
+        supported = {}
+
+    language = st.selectbox("Programming Language", list(supported.keys()))
+    framework = st.selectbox("Framework/ORM", supported.get(language, {}).get("frameworks", []))
+
+    include_models = st.checkbox("Include Models/Entities", value=True)
+    include_migrations = st.checkbox("Include Migration Files", value=True)
+    include_repositories = st.checkbox("Include Repository Pattern", value=False)
+
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("⬅️ Back to Schemas", use_container_width=True):
+            st.session_state.step = 4
+            st.rerun()
+
+    with col2:
+        if st.button("🚀 Generate Database Code", type="primary", use_container_width=True):
+            with st.spinner("Generating database code..."):
+                try:
+                    response = requests.post(
+                        f"{API_BASE_URL}/api/v1/generate-database-code",
+                        json={
+                            "session_id": st.session_state.session_id,
+                            "language": language,
+                            "framework": framework,
+                            "include_models": include_models,
+                            "include_migrations": include_migrations,
+                            "include_repositories": include_repositories
+                        }
+                    )
+
+                    if response.status_code == 200:
+                        data = response.json()
+                        st.session_state.generated_code = data
+
+                        # Display code files
+                        st.subheader("Generated Code Files")
+                        for file in data["files"]:
+                            with st.expander(file["filename"]):
+                                st.text_area("Content", value=file["content"], height=300, disabled=True)
+                                st.download_button(
+                                    label=f"📥 Download {file['filename']}",
+                                    data=file["content"],
+                                    file_name=file["filename"],
+                                    mime="text/plain"
+                                )
+
+                        # Setup instructions
+                        st.subheader("Setup Instructions")
+                        st.text_area("Instructions", value=data["setup_instructions"], height=250, disabled=True)
+
+                        st.success("✅ Database code generated successfully!")
+                    else:
+                        st.error(f"Error: {response.json().get('detail', 'Unknown error')}")
+                except Exception as e:
+                    st.error(f"Error connecting to API: {str(e)}")
 
 # Footer
 st.divider()

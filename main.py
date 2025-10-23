@@ -56,6 +56,26 @@ class TableSchemaResponse(BaseModel):
     sql_schema: str
     relationships: List[str]
 
+class CodeGenerationRequest(BaseModel):
+    session_id: str
+    language: str = Field(..., description="Programming language (python, javascript, java, go, csharp, ruby, php)")
+    framework: str = Field(..., description="Framework (sqlalchemy, prisma, typeorm, django, spring, gorm, entity_framework, activerecord, laravel)")
+    include_migrations: bool = Field(default=True, description="Include migration files")
+    include_models: bool = Field(default=True, description="Include model/entity definitions")
+    include_repositories: bool = Field(default=False, description="Include repository pattern implementation")
+
+class CodeFile(BaseModel):
+    filename: str
+    content: str
+    description: str
+
+class CodeGenerationResponse(BaseModel):
+    session_id: str
+    language: str
+    framework: str
+    files: List[CodeFile]
+    setup_instructions: str
+
 # In-memory session storage (use Redis/DB in production)
 sessions = {}
 
@@ -307,6 +327,14 @@ Ensure the SQL is production-ready and follows best practices.
         if "notes" in schema_data:
             full_schema += f"\n\n-- Notes: {schema_data['notes']}"
         
+        # Store schema in session for code generation
+        if "table_schemas" not in session:
+            session["table_schemas"] = {}
+        session["table_schemas"][request.table_name] = {
+            "sql_schema": full_schema,
+            "relationships": schema_data.get("relationships", [])
+        }
+        
         return TableSchemaResponse(
             table_name=request.table_name,
             sql_schema=full_schema,
@@ -348,6 +376,157 @@ async def list_sessions():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
+
+# Step 4: Generate database setup code in selected language/framework
+@app.post("/api/v1/generate-database-code", response_model=CodeGenerationResponse)
+async def generate_database_code(request: CodeGenerationRequest):
+    """
+    Generate complete database setup code in the specified language and framework
+    """
+    try:
+        if request.session_id not in sessions:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session = sessions[request.session_id]
+        
+        if "detailed_design" not in session:
+            raise HTTPException(status_code=400, detail="Detailed design not generated yet")
+        
+        if "table_schemas" not in session or not session["table_schemas"]:
+            raise HTTPException(status_code=400, detail="No table schemas generated yet. Generate table schemas first.")
+        
+        client = get_gemini_client(session["api_key"])
+        
+        # Get all table information
+        tables_info = []
+        for table in sorted(session["detailed_design"]["tables"], key=lambda x: x["sequence_order"]):
+            if table["table_name"] in session["table_schemas"]:
+                tables_info.append({
+                    "name": table["table_name"],
+                    "sql": session["table_schemas"][table["table_name"]]["sql_schema"],
+                    "relationships": session["table_schemas"][table["table_name"]]["relationships"]
+                })
+        
+        # Build comprehensive prompt
+        tables_sql = "\n\n".join([f"-- {t['name']}\n{t['sql']}" for t in tables_info])
+        
+        prompt = f"""
+You are an expert database developer. Generate production-ready database setup code for the following specifications:
+
+LANGUAGE: {request.language}
+FRAMEWORK: {request.framework}
+PROJECT: {session["project_description"]}
+
+DATABASE SCHEMA (SQL):
+{tables_sql}
+
+REQUIREMENTS:
+1. Generate complete, production-ready code
+2. Include proper error handling and validation
+3. Follow best practices for {request.framework}
+4. Include all necessary imports and dependencies
+"""
+
+        if request.include_models:
+            prompt += "\n5. Generate model/entity definitions for all tables with proper relationships"
+        
+        if request.include_migrations:
+            prompt += "\n6. Generate migration files for database schema creation"
+        
+        if request.include_repositories:
+            prompt += "\n7. Generate repository pattern implementation with CRUD operations"
+
+        prompt += f"""
+
+Generate the following files structure based on {request.framework} best practices:
+
+Return response in this JSON format:
+{{
+  "files": [
+    {{
+      "filename": "path/to/file.ext",
+      "content": "complete file content with all code",
+      "description": "brief description of the file purpose"
+    }}
+  ],
+  "setup_instructions": "Step-by-step instructions to setup and run the database code including:\n1. Required dependencies/packages to install\n2. Configuration steps\n3. How to run migrations\n4. How to use the models/entities\n5. Example usage code"
+}}
+
+IMPORTANT:
+- Generate COMPLETE, WORKING code - no placeholders or TODO comments
+- Include all necessary imports and configurations
+- Add inline comments explaining complex logic
+- Follow {request.language} and {request.framework} naming conventions
+- Ensure all relationships and foreign keys are properly defined
+- Include proper connection configuration (with environment variables)
+- Add validation and error handling
+"""
+
+        response = client.models.generate_content(
+            model=session["model_name"],
+            contents=prompt
+        )
+        
+        response_text = response.text.strip()
+        code_data = extract_json_from_response(response_text)
+        
+        # Store generated code in session
+        if "generated_code" not in session:
+            session["generated_code"] = {}
+        
+        session["generated_code"][f"{request.language}_{request.framework}"] = {
+            "files": code_data["files"],
+            "setup_instructions": code_data["setup_instructions"]
+        }
+        
+        return CodeGenerationResponse(
+            session_id=request.session_id,
+            language=request.language,
+            framework=request.framework,
+            files=[CodeFile(**f) for f in code_data["files"]],
+            setup_instructions=code_data["setup_instructions"]
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating database code: {str(e)}")
+
+@app.get("/api/v1/supported-languages")
+async def get_supported_languages():
+    """Get list of supported languages and their frameworks"""
+    return {
+        "python": {
+            "frameworks": ["sqlalchemy", "django", "tortoise-orm", "peewee"],
+            "description": "Python ORMs for database management"
+        },
+        "javascript": {
+            "frameworks": ["prisma", "typeorm", "sequelize", "mongoose"],
+            "description": "JavaScript/TypeScript ORMs"
+        },
+        "typescript": {
+            "frameworks": ["prisma", "typeorm", "mikro-orm"],
+            "description": "TypeScript ORMs with type safety"
+        },
+        "java": {
+            "frameworks": ["spring-data-jpa", "hibernate", "mybatis"],
+            "description": "Java persistence frameworks"
+        },
+        "go": {
+            "frameworks": ["gorm", "sqlx", "ent"],
+            "description": "Go database frameworks"
+        },
+        "csharp": {
+            "frameworks": ["entity-framework", "dapper", "nhibernate"],
+            "description": "C# database frameworks"
+        },
+        "ruby": {
+            "frameworks": ["activerecord", "sequel", "rom"],
+            "description": "Ruby ORMs"
+        },
+        "php": {
+            "frameworks": ["laravel-eloquent", "doctrine", "propel"],
+            "description": "PHP ORMs"
+        }
+    }
 
 if __name__ == "__main__":
     import uvicorn
