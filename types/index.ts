@@ -39,10 +39,10 @@ export interface AppState {
   modelName: string;
   projectDescription: string;
   questions: Question[];
-  answers: Record;
+  answers: Record<string, string>;
   tables: Table[];
   detailedPrompt: string;
-  generatedSchemas: Record;
+  generatedSchemas: Record<string, GeneratedSchema>;
   generatedCode: GeneratedCode | null;
   loading: boolean;
   error: string;

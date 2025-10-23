@@ -1,3 +1,5 @@
+import { Table, GeneratedSchema } from "@/types"; 
+
 export function downloadFile(content: string, filename: string, type = "text/plain") {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -9,8 +11,8 @@ export function downloadFile(content: string, filename: string, type = "text/pla
 }
 
 export function downloadMultipleSchemas(
-  schemas: Record,
-  tables: Array
+  schemas: Record<string, GeneratedSchema>,
+  tables: Array<Table>
 ): void {
   const sortedTables = [...tables].sort(
     (a, b) => a.sequence_order - b.sequence_order

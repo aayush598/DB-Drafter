@@ -1,3 +1,5 @@
+// lib/api/client.ts
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -9,10 +11,10 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiCall(
+export async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise {
+): Promise<T> {
   try {
     const response = await fetch(endpoint, {
       ...options,
@@ -22,11 +24,11 @@ export async function apiCall(
       },
     });
 
-    const data = await response.json();
+    const data: T = await response.json(); 
 
     if (!response.ok) {
       throw new ApiError(
-        data.error || "API request failed",
+        (data as any)?.error || "API request failed",
         response.status,
         data
       );
