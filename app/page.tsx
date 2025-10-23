@@ -16,6 +16,8 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 // Types
@@ -43,6 +45,9 @@ interface CodeFile {
 }
 
 export default function DatabaseSchemaGenerator() {
+  // Theme State
+  const [isDark, setIsDark] = useState(false);
+
   // State Management
   const [step, setStep] = useState(1);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -73,6 +78,23 @@ export default function DatabaseSchemaGenerator() {
   const [includeMigrations, setIncludeMigrations] = useState(true);
   const [includeRepositories, setIncludeRepositories] = useState(false);
   const [supportedLanguages, setSupportedLanguages] = useState<any>({});
+
+  // Load theme preference
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    setIsDark(savedTheme === "dark");
+  }, []);
+
+  // Apply theme
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
 
   // Fetch supported languages
   useEffect(() => {
@@ -266,9 +288,17 @@ export default function DatabaseSchemaGenerator() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className={`min-h-screen transition-colors duration-200 ${
+      isDark 
+        ? "bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900" 
+        : "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"
+    }`}>
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 shadow-sm">
+      <header className={`border-b shadow-sm transition-colors ${
+        isDark 
+          ? "bg-gray-800 border-gray-700" 
+          : "bg-white border-slate-200"
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -276,21 +306,38 @@ export default function DatabaseSchemaGenerator() {
                 <Database className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">
+                <h1 className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
                   Database Schema Generator
                 </h1>
-                <p className="text-sm text-slate-600">
+                <p className={`text-sm ${isDark ? "text-gray-400" : "text-slate-600"}`}>
                   AI-powered database design and code generation
                 </p>
               </div>
             </div>
-            <button
-              onClick={resetApp}
-              className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Start Over
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsDark(!isDark)}
+                className={`p-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? "hover:bg-gray-700 text-gray-400 hover:text-gray-200" 
+                    : "hover:bg-slate-100 text-slate-700"
+                }`}
+                aria-label="Toggle theme"
+              >
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={resetApp}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? "text-gray-300 hover:bg-gray-700" 
+                    : "text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" />
+                Start Over
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -299,16 +346,24 @@ export default function DatabaseSchemaGenerator() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sticky top-6">
+            <div className={`rounded-xl shadow-sm border p-6 sticky top-6 transition-colors ${
+              isDark 
+                ? "bg-gray-800 border-gray-700" 
+                : "bg-white border-slate-200"
+            }`}>
               {/* API Configuration */}
               <div className="mb-6">
-                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}>
                   <Settings className="w-4 h-4" />
                   Configuration
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className={`block text-xs font-medium mb-1 ${
+                      isDark ? "text-gray-300" : "text-slate-700"
+                    }`}>
                       Gemini API Key
                     </label>
                     <div className="relative">
@@ -316,12 +371,20 @@ export default function DatabaseSchemaGenerator() {
                         type={showApiKey ? "text" : "password"}
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
-                        className="w-full px-3 py-2 pr-10 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={`w-full px-3 py-2 pr-10 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                          isDark 
+                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                            : "bg-white border-slate-300 text-slate-900 placeholder-slate-400"
+                        }`}
                         placeholder="Enter API key"
                       />
                       <button
                         onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 transition-colors ${
+                          isDark 
+                            ? "text-gray-400 hover:text-gray-200" 
+                            : "text-slate-400 hover:text-slate-600"
+                        }`}
                       >
                         {showApiKey ? (
                           <EyeOff className="w-4 h-4" />
@@ -332,13 +395,19 @@ export default function DatabaseSchemaGenerator() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className={`block text-xs font-medium mb-1 ${
+                      isDark ? "text-gray-300" : "text-slate-700"
+                    }`}>
                       Model
                     </label>
                     <select
                       value={modelName}
                       onChange={(e) => setModelName(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                        isDark 
+                          ? "bg-gray-700 border-gray-600 text-white" 
+                          : "bg-white border-slate-300 text-slate-900"
+                      }`}
                     >
                       <option value="gemini-2.0-flash-lite">
                         Gemini 2.0 Flash Lite
@@ -352,7 +421,9 @@ export default function DatabaseSchemaGenerator() {
 
               {/* Progress */}
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-3">
+                <h3 className={`text-sm font-semibold mb-3 ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}>
                   Progress
                 </h3>
                 <div className="space-y-2">
@@ -366,7 +437,7 @@ export default function DatabaseSchemaGenerator() {
                             ? "text-green-600"
                             : stepNum === step
                             ? "text-blue-600 font-medium"
-                            : "text-slate-400"
+                            : isDark ? "text-gray-500" : "text-slate-400"
                         }`}
                       >
                         {stepNum < step ? (
@@ -376,7 +447,9 @@ export default function DatabaseSchemaGenerator() {
                             <div className="w-2 h-2 rounded-full bg-white" />
                           </div>
                         ) : (
-                          <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
+                          <div className={`w-4 h-4 rounded-full border-2 ${
+                            isDark ? "border-gray-600" : "border-slate-300"
+                          }`} />
                         )}
                         <span>{stepName}</span>
                       </div>
@@ -386,9 +459,15 @@ export default function DatabaseSchemaGenerator() {
               </div>
 
               {sessionId && (
-                <div className="mt-6 pt-6 border-t border-slate-200">
-                  <p className="text-xs text-slate-500">Session ID</p>
-                  <p className="text-xs font-mono text-slate-700 mt-1 break-all">
+                <div className={`mt-6 pt-6 border-t ${
+                  isDark ? "border-gray-700" : "border-slate-200"
+                }`}>
+                  <p className={`text-xs ${isDark ? "text-gray-400" : "text-slate-500"}`}>
+                    Session ID
+                  </p>
+                  <p className={`text-xs font-mono mt-1 break-all ${
+                    isDark ? "text-gray-300" : "text-slate-700"
+                  }`}>
                     {sessionId}
                   </p>
                 </div>
@@ -402,12 +481,24 @@ export default function DatabaseSchemaGenerator() {
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3"
+                className={`mb-6 border rounded-lg p-4 flex items-start gap-3 ${
+                  isDark 
+                    ? "bg-red-900/20 border-red-800" 
+                    : "bg-red-50 border-red-200"
+                }`}
               >
                 <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-red-900">Error</p>
-                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                  <p className={`text-sm font-medium ${
+                    isDark ? "text-red-400" : "text-red-900"
+                  }`}>
+                    Error
+                  </p>
+                  <p className={`text-sm mt-1 ${
+                    isDark ? "text-red-300" : "text-red-700"
+                  }`}>
+                    {error}
+                  </p>
                 </div>
               </motion.div>
             )}
@@ -420,24 +511,38 @@ export default function DatabaseSchemaGenerator() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white rounded-xl shadow-sm border border-slate-200 p-8"
+                  className={`rounded-xl shadow-sm border p-8 transition-colors ${
+                    isDark 
+                      ? "bg-gray-800 border-gray-700" 
+                      : "bg-white border-slate-200"
+                  }`}
                 >
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    <h2 className={`text-2xl font-bold mb-2 ${
+                      isDark ? "text-white" : "text-slate-900"
+                    }`}>
                       Describe Your Project
                     </h2>
-                    <p className="text-slate-600">
+                    <p className={isDark ? "text-gray-400" : "text-slate-600"}>
                       Provide a detailed description of your project to generate
                       relevant database questions.
                     </p>
                   </div>
 
                   {!apiKey && (
-                    <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <p className="text-sm font-medium text-amber-900 mb-2">
+                    <div className={`mb-6 border rounded-lg p-4 ${
+                      isDark 
+                        ? "bg-amber-900/20 border-amber-800" 
+                        : "bg-amber-50 border-amber-200"
+                    }`}>
+                      <p className={`text-sm font-medium mb-2 ${
+                        isDark ? "text-amber-400" : "text-amber-900"
+                      }`}>
                         API Key Required
                       </p>
-                      <p className="text-sm text-amber-700 mb-3">
+                      <p className={`text-sm mb-3 ${
+                        isDark ? "text-amber-300" : "text-amber-700"
+                      }`}>
                         Enter your Gemini API key in the sidebar to continue.
                       </p>
                       <a
@@ -454,7 +559,11 @@ export default function DatabaseSchemaGenerator() {
                   <textarea
                     value={projectDescription}
                     onChange={(e) => setProjectDescription(e.target.value)}
-                    className="w-full h-64 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className={`w-full h-64 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors ${
+                      isDark 
+                        ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                        : "bg-white border-slate-300 text-slate-900 placeholder-slate-400"
+                    }`}
                     placeholder="Example: An e-commerce platform with user authentication, product catalog, shopping cart, order management, and payment processing. The system should support multiple vendors, customer reviews, wishlists, and promotional codes..."
                   />
 
@@ -487,13 +596,19 @@ export default function DatabaseSchemaGenerator() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white rounded-xl shadow-sm border border-slate-200 p-8"
+                  className={`rounded-xl shadow-sm border p-8 transition-colors ${
+                    isDark 
+                      ? "bg-gray-800 border-gray-700" 
+                      : "bg-white border-slate-200"
+                  }`}
                 >
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    <h2 className={`text-2xl font-bold mb-2 ${
+                      isDark ? "text-white" : "text-slate-900"
+                    }`}>
                       Answer Questions
                     </h2>
-                    <p className="text-slate-600">
+                    <p className={isDark ? "text-gray-400" : "text-slate-600"}>
                       Help us understand your requirements better.
                     </p>
                   </div>
@@ -502,16 +617,26 @@ export default function DatabaseSchemaGenerator() {
                     {questions.map((q, idx) => (
                       <div
                         key={q.id}
-                        className="p-6 bg-slate-50 rounded-lg border border-slate-200"
+                        className={`p-6 rounded-lg border transition-colors ${
+                          isDark 
+                            ? "bg-gray-700 border-gray-600" 
+                            : "bg-slate-50 border-slate-200"
+                        }`}
                       >
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                        <h3 className={`text-lg font-semibold mb-4 ${
+                          isDark ? "text-white" : "text-slate-900"
+                        }`}>
                           {idx + 1}. {q.question}
                         </h3>
                         <div className="space-y-2">
                           {q.options.map((option) => (
                             <label
                               key={option}
-                              className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                              className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                                isDark 
+                                  ? "bg-gray-800 border-gray-600 hover:border-blue-500 hover:bg-gray-750" 
+                                  : "bg-white border-slate-200 hover:border-blue-500 hover:bg-blue-50"
+                              }`}
                             >
                               <input
                                 type="radio"
@@ -526,7 +651,9 @@ export default function DatabaseSchemaGenerator() {
                                 }
                                 className="w-4 h-4 text-blue-600"
                               />
-                              <span className="text-slate-700">{option}</span>
+                              <span className={isDark ? "text-gray-300" : "text-slate-700"}>
+                                {option}
+                              </span>
                             </label>
                           ))}
                         </div>
@@ -537,7 +664,11 @@ export default function DatabaseSchemaGenerator() {
                   <div className="mt-8 flex justify-between">
                     <button
                       onClick={() => setStep(1)}
-                      className="flex items-center gap-2 px-6 py-3 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
+                        isDark 
+                          ? "text-gray-300 bg-gray-700 hover:bg-gray-600" 
+                          : "text-slate-700 bg-slate-100 hover:bg-slate-200"
+                      }`}
                     >
                       <ChevronLeft className="w-5 h-5" />
                       Back
@@ -572,13 +703,19 @@ export default function DatabaseSchemaGenerator() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white rounded-xl shadow-sm border border-slate-200 p-8"
+                  className={`rounded-xl shadow-sm border p-8 transition-colors ${
+                    isDark 
+                      ? "bg-gray-800 border-gray-700" 
+                      : "bg-white border-slate-200"
+                  }`}
                 >
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    <h2 className={`text-2xl font-bold mb-2 ${
+                      isDark ? "text-white" : "text-slate-900"
+                    }`}>
                       Database Design Overview
                     </h2>
-                    <p className="text-slate-600">
+                    <p className={isDark ? "text-gray-400" : "text-slate-600"}>
                       Review the proposed table structure.
                     </p>
                   </div>
@@ -592,8 +729,14 @@ export default function DatabaseSchemaGenerator() {
                   </button>
 
                   {showPrompt && (
-                    <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                      <pre className="text-xs text-slate-700 whitespace-pre-wrap">
+                    <div className={`mb-6 p-4 border rounded-lg transition-colors ${
+                      isDark 
+                        ? "bg-gray-700 border-gray-600" 
+                        : "bg-slate-50 border-slate-200"
+                    }`}>
+                      <pre className={`text-xs whitespace-pre-wrap ${
+                        isDark ? "text-gray-300" : "text-slate-700"
+                      }`}>
                         {detailedPrompt}
                       </pre>
                     </div>
@@ -605,16 +748,24 @@ export default function DatabaseSchemaGenerator() {
                       .map((table) => (
                         <div
                           key={table.table_name}
-                          className="flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg"
+                          className={`flex items-start gap-4 p-4 border rounded-lg transition-colors ${
+                            isDark 
+                              ? "bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-800" 
+                              : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+                          }`}
                         >
                           <div className="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold">
                             {table.sequence_order}
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                            <h3 className={`text-lg font-semibold mb-1 ${
+                              isDark ? "text-white" : "text-slate-900"
+                            }`}>
                               {table.table_name}
                             </h3>
-                            <p className="text-sm text-slate-600">
+                            <p className={`text-sm ${
+                              isDark ? "text-gray-400" : "text-slate-600"
+                            }`}>
                               {table.description.slice(0, 200)}...
                             </p>
                           </div>
@@ -625,7 +776,11 @@ export default function DatabaseSchemaGenerator() {
                   <div className="flex justify-between">
                     <button
                       onClick={() => setStep(2)}
-                      className="flex items-center gap-2 px-6 py-3 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
+                        isDark 
+                          ? "text-gray-300 bg-gray-700 hover:bg-gray-600" 
+                          : "text-slate-700 bg-slate-100 hover:bg-slate-200"
+                      }`}
                     >
                       <ChevronLeft className="w-5 h-5" />
                       Back
@@ -648,13 +803,19 @@ export default function DatabaseSchemaGenerator() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white rounded-xl shadow-sm border border-slate-200 p-8"
+                  className={`rounded-xl shadow-sm border p-8 transition-colors ${
+                    isDark 
+                      ? "bg-gray-800 border-gray-700" 
+                      : "bg-white border-slate-200"
+                  }`}
                 >
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    <h2 className={`text-2xl font-bold mb-2 ${
+                      isDark ? "text-white" : "text-slate-900"
+                    }`}>
                       SQL Schemas
                     </h2>
-                    <p className="text-slate-600">
+                    <p className={isDark ? "text-gray-400" : "text-slate-600"}>
                       Generate and download SQL schemas for your tables.
                     </p>
                   </div>
@@ -681,7 +842,9 @@ export default function DatabaseSchemaGenerator() {
 
                   {Object.keys(generatedSchemas).length > 0 && (
                     <>
-                      <div className="mb-6 border-b border-slate-200">
+                      <div className={`mb-6 border-b ${
+                        isDark ? "border-gray-700" : "border-slate-200"
+                      }`}>
                         <div className="flex gap-2 overflow-x-auto">
                           {tables
                             .sort((a, b) => a.sequence_order - b.sequence_order)
@@ -692,7 +855,9 @@ export default function DatabaseSchemaGenerator() {
                                 className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                                   activeTab === idx
                                     ? "border-blue-600 text-blue-600"
-                                    : "border-transparent text-slate-600 hover:text-slate-900"
+                                    : isDark 
+                                      ? "border-transparent text-gray-400 hover:text-gray-200" 
+                                      : "border-transparent text-slate-600 hover:text-slate-900"
                                 }`}
                               >
                                 {table.table_name}
@@ -711,10 +876,16 @@ export default function DatabaseSchemaGenerator() {
                             {generatedSchemas[table.table_name] ? (
                               <div className="space-y-4">
                                 <div>
-                                  <h3 className="text-sm font-semibold text-slate-900 mb-2">
+                                  <h3 className={`text-sm font-semibold mb-2 ${
+                                    isDark ? "text-white" : "text-slate-900"
+                                  }`}>
                                     SQL Schema
                                   </h3>
-                                  <pre className="p-4 bg-slate-900 text-slate-100 rounded-lg overflow-x-auto text-sm">
+                                  <pre className={`p-4 rounded-lg overflow-x-auto text-sm ${
+                                    isDark 
+                                      ? "bg-gray-900 text-gray-100" 
+                                      : "bg-slate-900 text-slate-100"
+                                  }`}>
                                     {generatedSchemas[table.table_name].sql_schema}
                                   </pre>
                                 </div>
@@ -722,7 +893,9 @@ export default function DatabaseSchemaGenerator() {
                                 {generatedSchemas[table.table_name].relationships
                                   .length > 0 && (
                                   <div>
-                                    <h3 className="text-sm font-semibold text-slate-900 mb-2">
+                                    <h3 className={`text-sm font-semibold mb-2 ${
+                                      isDark ? "text-white" : "text-slate-900"
+                                    }`}>
                                       Relationships
                                     </h3>
                                     <div className="space-y-2">
@@ -731,7 +904,11 @@ export default function DatabaseSchemaGenerator() {
                                       ].relationships.map((rel, i) => (
                                         <div
                                           key={i}
-                                          className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-slate-700"
+                                          className={`p-3 border rounded-lg text-sm ${
+                                            isDark 
+                                              ? "bg-blue-900/20 border-blue-800 text-gray-300" 
+                                              : "bg-blue-50 border-blue-200 text-slate-700"
+                                          }`}
                                         >
                                           {rel}
                                         </div>
@@ -755,7 +932,11 @@ export default function DatabaseSchemaGenerator() {
                                     a.download = `${table.table_name}.sql`;
                                     a.click();
                                   }}
-                                  className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+                                    isDark 
+                                      ? "text-blue-400 bg-blue-900/20 border-blue-800 hover:bg-blue-900/30" 
+                                      : "text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100"
+                                  }`}
                                 >
                                   <Download className="w-4 h-4" />
                                   Download {table.table_name}.sql
@@ -763,7 +944,7 @@ export default function DatabaseSchemaGenerator() {
                               </div>
                             ) : (
                               <div className="text-center py-12">
-                                <p className="text-slate-600 mb-4">
+                                <p className={isDark ? "text-gray-400 mb-4" : "text-slate-600 mb-4"}>
                                   Schema not generated yet
                                 </p>
                               </div>
@@ -772,7 +953,9 @@ export default function DatabaseSchemaGenerator() {
                         ))}
 
                       {Object.keys(generatedSchemas).length === tables.length && (
-                        <div className="mt-6 pt-6 border-t border-slate-200">
+                        <div className={`mt-6 pt-6 border-t ${
+                          isDark ? "border-gray-700" : "border-slate-200"
+                        }`}>
                           <button
                             onClick={downloadAllSchemas}
                             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
@@ -788,7 +971,11 @@ export default function DatabaseSchemaGenerator() {
                   <div className="mt-8 flex justify-between">
                     <button
                       onClick={() => setStep(3)}
-                      className="flex items-center gap-2 px-6 py-3 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
+                        isDark 
+                          ? "text-gray-300 bg-gray-700 hover:bg-gray-600" 
+                          : "text-slate-700 bg-slate-100 hover:bg-slate-200"
+                      }`}
                     >
                       <ChevronLeft className="w-5 h-5" />
                       Back
@@ -812,13 +999,19 @@ export default function DatabaseSchemaGenerator() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white rounded-xl shadow-sm border border-slate-200 p-8"
+                  className={`rounded-xl shadow-sm border p-8 transition-colors ${
+                    isDark 
+                      ? "bg-gray-800 border-gray-700" 
+                      : "bg-white border-slate-200"
+                  }`}
                 >
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    <h2 className={`text-2xl font-bold mb-2 ${
+                      isDark ? "text-white" : "text-slate-900"
+                    }`}>
                       Generate Database Code
                     </h2>
-                    <p className="text-slate-600">
+                    <p className={isDark ? "text-gray-400" : "text-slate-600"}>
                       Create complete database setup code in your preferred language.
                     </p>
                   </div>
@@ -827,7 +1020,9 @@ export default function DatabaseSchemaGenerator() {
                     <div className="space-y-6 mb-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                          <label className={`block text-sm font-medium mb-2 ${
+                            isDark ? "text-gray-300" : "text-slate-700"
+                          }`}>
                             Programming Language
                           </label>
                           <select
@@ -838,7 +1033,11 @@ export default function DatabaseSchemaGenerator() {
                                 supportedLanguages[e.target.value]?.frameworks[0] || ""
                               );
                             }}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                              isDark 
+                                ? "bg-gray-700 border-gray-600 text-white" 
+                                : "bg-white border-slate-300 text-slate-900"
+                            }`}
                           >
                             {Object.keys(supportedLanguages).map((lang) => (
                               <option key={lang} value={lang}>
@@ -849,13 +1048,19 @@ export default function DatabaseSchemaGenerator() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                          <label className={`block text-sm font-medium mb-2 ${
+                            isDark ? "text-gray-300" : "text-slate-700"
+                          }`}>
                             Framework/ORM
                           </label>
                           <select
                             value={selectedFramework}
                             onChange={(e) => setSelectedFramework(e.target.value)}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                              isDark 
+                                ? "bg-gray-700 border-gray-600 text-white" 
+                                : "bg-white border-slate-300 text-slate-900"
+                            }`}
                           >
                             {supportedLanguages[selectedLanguage]?.frameworks.map(
                               (fw: string) => (
@@ -869,7 +1074,11 @@ export default function DatabaseSchemaGenerator() {
                       </div>
 
                       <div className="space-y-3">
-                        <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                        <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                          isDark 
+                            ? "bg-gray-700 border-gray-600 hover:bg-gray-650" 
+                            : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                        }`}>
                           <input
                             type="checkbox"
                             checked={includeModels}
@@ -877,16 +1086,24 @@ export default function DatabaseSchemaGenerator() {
                             className="w-5 h-5 text-blue-600 rounded"
                           />
                           <div>
-                            <p className="font-medium text-slate-900">
+                            <p className={`font-medium ${
+                              isDark ? "text-white" : "text-slate-900"
+                            }`}>
                               Include Models/Entities
                             </p>
-                            <p className="text-sm text-slate-600">
+                            <p className={`text-sm ${
+                              isDark ? "text-gray-400" : "text-slate-600"
+                            }`}>
                               Generate model classes for all tables
                             </p>
                           </div>
                         </label>
 
-                        <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                        <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                          isDark 
+                            ? "bg-gray-700 border-gray-600 hover:bg-gray-650" 
+                            : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                        }`}>
                           <input
                             type="checkbox"
                             checked={includeMigrations}
@@ -894,16 +1111,24 @@ export default function DatabaseSchemaGenerator() {
                             className="w-5 h-5 text-blue-600 rounded"
                           />
                           <div>
-                            <p className="font-medium text-slate-900">
+                            <p className={`font-medium ${
+                              isDark ? "text-white" : "text-slate-900"
+                            }`}>
                               Include Migration Files
                             </p>
-                            <p className="text-sm text-slate-600">
+                            <p className={`text-sm ${
+                              isDark ? "text-gray-400" : "text-slate-600"
+                            }`}>
                               Generate database migration scripts
                             </p>
                           </div>
                         </label>
 
-                        <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                        <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                          isDark 
+                            ? "bg-gray-700 border-gray-600 hover:bg-gray-650" 
+                            : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                        }`}>
                           <input
                             type="checkbox"
                             checked={includeRepositories}
@@ -913,10 +1138,14 @@ export default function DatabaseSchemaGenerator() {
                             className="w-5 h-5 text-blue-600 rounded"
                           />
                           <div>
-                            <p className="font-medium text-slate-900">
+                            <p className={`font-medium ${
+                              isDark ? "text-white" : "text-slate-900"
+                            }`}>
                               Include Repository Pattern
                             </p>
-                            <p className="text-sm text-slate-600">
+                            <p className={`text-sm ${
+                              isDark ? "text-gray-400" : "text-slate-600"
+                            }`}>
                               Generate repository classes with CRUD operations
                             </p>
                           </div>
@@ -927,13 +1156,21 @@ export default function DatabaseSchemaGenerator() {
 
                   {generatedCode && (
                     <div className="space-y-6 mb-8">
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+                      <div className={`border rounded-lg p-4 flex items-start gap-3 ${
+                        isDark 
+                          ? "bg-green-900/20 border-green-800" 
+                          : "bg-green-50 border-green-200"
+                      }`}>
                         <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-green-900">
+                          <p className={`text-sm font-medium ${
+                            isDark ? "text-green-400" : "text-green-900"
+                          }`}>
                             Code Generated Successfully
                           </p>
-                          <p className="text-sm text-green-700 mt-1">
+                          <p className={`text-sm mt-1 ${
+                            isDark ? "text-green-300" : "text-green-700"
+                          }`}>
                             {generatedCode.files.length} files generated for{" "}
                             {selectedLanguage} with {selectedFramework}
                           </p>
@@ -941,19 +1178,29 @@ export default function DatabaseSchemaGenerator() {
                       </div>
 
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                        <h3 className={`text-lg font-semibold mb-4 ${
+                          isDark ? "text-white" : "text-slate-900"
+                        }`}>
                           Generated Files
                         </h3>
                         <div className="space-y-4">
                           {generatedCode.files.map((file, idx) => (
                             <div
                               key={idx}
-                              className="border border-slate-200 rounded-lg overflow-hidden"
+                              className={`border rounded-lg overflow-hidden ${
+                                isDark ? "border-gray-700" : "border-slate-200"
+                              }`}
                             >
-                              <div className="bg-slate-100 px-4 py-3 flex items-center justify-between">
+                              <div className={`px-4 py-3 flex items-center justify-between ${
+                                isDark ? "bg-gray-700" : "bg-slate-100"
+                              }`}>
                                 <div className="flex items-center gap-2">
-                                  <Code className="w-4 h-4 text-slate-600" />
-                                  <span className="font-mono text-sm text-slate-900">
+                                  <Code className={`w-4 h-4 ${
+                                    isDark ? "text-gray-400" : "text-slate-600"
+                                  }`} />
+                                  <span className={`font-mono text-sm ${
+                                    isDark ? "text-white" : "text-slate-900"
+                                  }`}>
                                     {file.filename}
                                   </span>
                                 </div>
@@ -975,10 +1222,16 @@ export default function DatabaseSchemaGenerator() {
                                 </button>
                               </div>
                               <div className="p-4">
-                                <p className="text-sm text-slate-600 mb-3">
+                                <p className={`text-sm mb-3 ${
+                                  isDark ? "text-gray-400" : "text-slate-600"
+                                }`}>
                                   {file.description}
                                 </p>
-                                <pre className="p-4 bg-slate-900 text-slate-100 rounded-lg overflow-x-auto text-xs max-h-96">
+                                <pre className={`p-4 rounded-lg overflow-x-auto text-xs max-h-96 ${
+                                  isDark 
+                                    ? "bg-gray-900 text-gray-100" 
+                                    : "bg-slate-900 text-slate-100"
+                                }`}>
                                   {file.content}
                                 </pre>
                               </div>
@@ -988,11 +1241,19 @@ export default function DatabaseSchemaGenerator() {
                       </div>
 
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                        <h3 className={`text-lg font-semibold mb-4 ${
+                          isDark ? "text-white" : "text-slate-900"
+                        }`}>
                           Setup Instructions
                         </h3>
-                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                          <pre className="text-sm text-slate-700 whitespace-pre-wrap">
+                        <div className={`p-4 border rounded-lg ${
+                          isDark 
+                            ? "bg-gray-700 border-gray-600" 
+                            : "bg-slate-50 border-slate-200"
+                        }`}>
+                          <pre className={`text-sm whitespace-pre-wrap ${
+                            isDark ? "text-gray-300" : "text-slate-700"
+                          }`}>
                             {generatedCode.setup_instructions}
                           </pre>
                         </div>
@@ -1003,7 +1264,11 @@ export default function DatabaseSchemaGenerator() {
                   <div className="flex justify-between">
                     <button
                       onClick={() => setStep(4)}
-                      className="flex items-center gap-2 px-6 py-3 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
+                        isDark 
+                          ? "text-gray-300 bg-gray-700 hover:bg-gray-600" 
+                          : "text-slate-700 bg-slate-100 hover:bg-slate-200"
+                      }`}
                     >
                       <ChevronLeft className="w-5 h-5" />
                       Back to Schemas
@@ -1036,9 +1301,15 @@ export default function DatabaseSchemaGenerator() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-16 border-t border-slate-200 bg-white">
+      <footer className={`mt-16 border-t ${
+        isDark 
+          ? "border-gray-700 bg-gray-800" 
+          : "border-slate-200 bg-white"
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-slate-600">
+          <p className={`text-center text-sm ${
+            isDark ? "text-gray-400" : "text-slate-600"
+          }`}>
             Powered by Google Gemini 2.0 Flash | Built with Next.js & TypeScript
           </p>
         </div>
