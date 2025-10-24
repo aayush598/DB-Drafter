@@ -14,8 +14,16 @@ export interface GenerateDesignResponse {
 export async function generateDesign(
   request: GenerateDesignRequest
 ): Promise<GenerateDesignResponse> {
-  return apiCall<GenerateDesignResponse>("/api/v1/generate-detailed-prompt", {
-    method: "POST",
-    body: JSON.stringify(request),
-  });
+  try {
+    return await apiCall<GenerateDesignResponse>(
+      "/api/v1/generate-detailed-prompt",
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      }
+    );
+  } catch (error) {
+    console.error("generateDesign error:", error);
+    throw error;
+  }
 }

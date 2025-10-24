@@ -1,5 +1,3 @@
-// lib/api/questions.ts
-
 import { apiCall } from "./client";
 import { Question } from "@/types";
 
@@ -16,12 +14,17 @@ export interface GenerateQuestionsResponse {
 
 export async function generateQuestions(
   request: GenerateQuestionsRequest
-): Promise<GenerateQuestionsResponse> { // 1. Fix: Add the specific return type
-  return apiCall<GenerateQuestionsResponse>( // 2. Fix: Pass the return type to apiCall
-    "/api/v1/generate-questions",
-    {
-      method: "POST",
-      body: JSON.stringify(request),
-    }
-  );
+): Promise<GenerateQuestionsResponse> {
+  try {
+    return await apiCall<GenerateQuestionsResponse>(
+      "/api/v1/generate-questions",
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      }
+    );
+  } catch (error) {
+    console.error("generateQuestions error:", error);
+    throw error;
+  }
 }
