@@ -1,0 +1,70 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull request to the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # Match the version of Node.js in your app
+
+      # Cache node_modules to speed up subsequent builds
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Lint the project
+      - name: Run ESLint
+        run: npm run lint
+
+      # Build the application
+      - name: Build the project
+        run: npm run build
+
+      # Optionally, you can deploy the app here if needed, e.g. with Vercel or Netlify
+      # - name: Deploy to Vercel (or Netlify, etc.)
+      #   run: npm run deploy
+
+  # Additional job to test (optional)
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      # Run tests (if you have any)
+      - name: Run tests
+        run: npm test
