@@ -1,4 +1,5 @@
-import { toast } from "react-toastify";
+// lib/api/client.ts
+import { handleApiError } from "@/lib/utils/errorHandler";
 
 export class ApiError extends Error {
   constructor(
@@ -24,27 +25,19 @@ export async function apiCall<T>(
       },
     });
 
-    const data: T = await response.json();
+    const data: T = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const message = (data as any)?.error?.message || (data as any)?.error || "API request failed";
-      // ✅ Only toast here, before throwing
-      toast.error(`Error ${response.status}: ${message}`);
-      throw new ApiError(message, response.status, data);
+      throw new ApiError(
+        (data as any)?.error?.message || (data as any)?.error || "API request failed",
+        response.status,
+        data
+      );
     }
 
     return data;
   } catch (error) {
-    // ✅ Only toast for non-ApiError (network/JS errors)
-    if (!(error instanceof ApiError)) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Network or unexpected error occurred";
-      toast.error(message);
-      throw new ApiError(message);
-    }
-    // ApiError already toasted above, just rethrow
+    handleApiError(error); // ✅ Show actionable toast
     throw error;
   }
 }
