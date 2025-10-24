@@ -2,28 +2,41 @@
 export const generateQuestionsPrompt = (description: string) => `
 You are an expert database requirements analyst.
 
-Based on the following project description, generate 5–7 relevant questions
-to understand the database requirements better.
+Based on the following project description, generate 5–7 multiple-choice questions (MCQs) 
+to understand the database requirements better. Each question must have 3–5 options. 
+Do NOT provide any free-text answers.
 
 Project Description:
 ${description}
 
-Generate questions about:
-1. Project complexity (Simple/Moderate/Complex/Enterprise)
-2. Expected scale/number of users (Small <1K / Medium 1K–100K / Large 100K–1M / Enterprise >1M)
+The questions should cover:
+1. Project complexity level
+2. Expected scale/number of users
 3. Data relationships complexity
 4. Performance requirements
-5. Security requirements
-6. Domain-specific considerations
+5. Security level
+6. Any other domain-specific considerations
 
-Return valid JSON:
+Return the response strictly in the following JSON format:
+
 {
   "questions": [
     {
       "id": "q1",
-      "question": "What is the complexity level of the project?",
-      "options": ["Simple", "Moderate", "Complex", "Enterprise"]
+      "question": "Your first question here?",
+      "options": ["Option 1", "Option 2", "Option 3", "Option 4"]
+    },
+    {
+      "id": "q2",
+      "question": "Your second question here?",
+      "options": ["Option 1", "Option 2", "Option 3"]
     }
   ]
 }
+
+⚠️ Important:
+- Ensure all questions have a unique "id".
+- All answers must be listed under "options".
+- Do not include any free-text answers.
+- JSON must be valid and parseable.
 `;

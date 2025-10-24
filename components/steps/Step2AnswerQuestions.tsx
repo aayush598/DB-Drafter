@@ -27,6 +27,7 @@ export function Step2AnswerQuestions({
 }: Step2Props) {
   // 2. Use useEffect to set default answers on mount
   useEffect(() => {
+    console.log(questions);
     questions.forEach((q) => {
       // Check if the question has options AND hasn't been answered yet
       if (q.options.length > 0 && !answers[q.id]) {

@@ -34,7 +34,7 @@ export function SchemaViewer({ isDark, tableName, schema }: SchemaViewerProps) {
         </pre>
       </div>
 
-      {schema.relationships.length > 0 && (
+      {schema.relationships?.length > 0 && (
         <div>
           <h3
             className={`text-sm font-semibold mb-2 ${
